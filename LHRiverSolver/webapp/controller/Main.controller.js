@@ -82,6 +82,7 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			var fnHover = function(oEvent){
 				if(this !== self._oHoverTile){
 					var oPrevHoverTile = self._oHoverTile;
+					var sImage;
 					self._oHoverTile = this;
 					if(self._bDrawing){
 						var x = self._getX(this);
@@ -105,7 +106,6 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 								self._aHoverPreview.push(oTempTile);
 								if((self._isEmpty(oTempTile) && !self._bErasing)
 									|| (self._isRoad(oTempTile) && self._bErasing)){
-									var sImage;
 									if(self._bErasing){
 										sImage = "images/RoadHoverErase.png";
 									}else{
@@ -119,7 +119,12 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 						if(oPrevHoverTile){
 							self._removeHover(oPrevHoverTile);
 						}
-						self._oHoverTile.setProperty("backgroundImage", "images/RoadHover.png");
+						if(self._isRoad(self._oHoverTile)){
+							sImage = "images/RoadHoverErase.png";
+						}else if(self._isEmpty(self._oHoverTile)){
+							sImage = "images/RoadHover.png";
+						}
+						self._oHoverTile.setProperty("backgroundImage", sImage);
 					}
 				}
 			};
