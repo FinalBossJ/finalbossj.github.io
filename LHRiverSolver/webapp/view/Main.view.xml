@@ -1,4 +1,21 @@
 <mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns="sap.m" controllerName="opensap.myapp.controller.Main">
-	<VBox fitContainer="true" id="board"/>
-		
+	<HBox id="mainBox" justifyContent="SpaceAround">
+		<VBox id="board" fitContainer="true"/>
+		<VBox >
+			<Text text="Draw Mode:"/>
+			<RadioButtonGroup 
+				class="sapUiMediumMarginBottom"
+				selectedIndex="{LHModel>/DrawMode}">
+				<RadioButton text="Cell" enabled="false">
+					
+				</RadioButton>
+				<RadioButton text="Line">
+					
+				</RadioButton>
+				<RadioButton text="Multiple lines">
+					
+				</RadioButton>
+			</RadioButtonGroup>
+		</VBox>
+	</HBox>
 </mvc:View>

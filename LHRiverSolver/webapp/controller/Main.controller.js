@@ -7,6 +7,13 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			var self = this;
 			var oView = this.getView();
 			var oBoard = oView.byId("board");
+			var oViewModel = new JSONModel({
+				busy : true,
+				BusyDelay : 0
+			    });
+		    oViewModel.setProperty("/DrawMode", 1); // 0 - Cell; 1 - Line; 2 - MultiLine
+		    oView.setModel(oViewModel, "LHModel");
+			
 			this._bDrawing = false;
 			this._bErasing = false;
 			this._oDrawTile;
@@ -47,15 +54,16 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 						self._aHoverPreview.forEach(function(oItem){
 							if(self._bErasing){
 								self._setEmpty(oItem);
-								self._bDrawing = false;
-								self._oDrawTile = null;
 							}else{
 								self._setRoad(oItem);
 							}
 						});
-						if(!self._bErasing){
+						if(self._getDrawMode() === 2){
 							self._oDrawTile = oLastTile;
 							self._oDrawTile.addStyleClass("boardTileSelected");
+						}else{
+							self._bDrawing = false;
+							self._oDrawTile = null;
 						}
 					}
 				}else{
@@ -64,6 +72,9 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 					self._oDrawTile.addStyleClass("boardTileSelected");
 					self._oHoverTile = null;
 					self._bErasing = self._isRoad(this);
+					if(self._bErasing){
+						self._oDrawTile.setProperty("backgroundImage", "images/RoadHoverErase.png");
+					}
 				}
 				self._clearHoverPreview();
 			};
@@ -208,6 +219,10 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			var x = this._getX(oTile);
 			var y = this._getY(oTile);
 			return this._aBoard[x][y] === 0;
+		},
+		
+		_getDrawMode: function(){
+			return this.getView().getModel("LHModel").getProperty("/DrawMode");
 		},
 		
 		_checkVictory: function(){
