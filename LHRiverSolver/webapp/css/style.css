@@ -1,0 +1,9 @@
+.boardTile {
+	width: 3vw !important;
+	height: 3vw !important;
+}
+
+.boardTileSelected{
+	border-color: yellow;
+	border-width: medium;
+}
