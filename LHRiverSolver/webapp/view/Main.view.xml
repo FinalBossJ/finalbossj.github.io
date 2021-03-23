@@ -1,0 +1,4 @@
+<mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:l="sap.ui.layout" xmlns="sap.m" controllerName="opensap.myapp.controller.Main">
+	<VBox fitContainer="true" id="board"/>
+		
+</mvc:View>
