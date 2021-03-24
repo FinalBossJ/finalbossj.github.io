@@ -7,3 +7,8 @@
 	border-color: yellow;
 	border-width: medium;
 }
+
+.startTileSelected{
+	border-color: lime;
+	border-width: medium;
+}

@@ -3,19 +3,17 @@
 		<VBox id="board" fitContainer="true"/>
 		<VBox >
 			<Text text="Draw Mode:"/>
-			<RadioButtonGroup 
+			<RadioButtonGroup
+				id="groupRB"
 				class="sapUiMediumMarginBottom"
-				selectedIndex="{LHModel>/DrawMode}">
-				<RadioButton text="Cell" enabled="false">
-					
-				</RadioButton>
-				<RadioButton text="Line">
-					
-				</RadioButton>
-				<RadioButton text="Multiple lines">
-					
-				</RadioButton>
+				selectedIndex="{LHModel>/DrawMode}"
+				select="handleRBSelect">
+					<RadioButton id="cellRB" text="1 - Cell"/>
+					<RadioButton id="lineRB" text="2 - Line"/>
+					<RadioButton id="multiRB" text="3 - Multiple lines"/>
 			</RadioButtonGroup>
+			<Button id="clearBtn" text="0 - Clear" press="handleClearBoard"/>
+			<Button text="Generate River" press="handleSolveBoard"/>
 		</VBox>
 	</HBox>
 </mvc:View>

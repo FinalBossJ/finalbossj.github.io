@@ -7,6 +7,7 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			var self = this;
 			var oView = this.getView();
 			var oBoard = oView.byId("board");
+			var oMain = oView.byId("mainBox");
 			var oViewModel = new JSONModel({
 				busy : true,
 				BusyDelay : 0
@@ -16,13 +17,12 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			
 			this._bDrawing = false;
 			this._bErasing = false;
-			this._oDrawTile;
-			this._oHoverTile;
+			this._oDrawTile, this._oHoverTile, this._oStartTile;
 			this._aHoverPreview = [];
 			
 			this._iRows = 12;
 			this._iColumns = 21;
-			this._aBoard = new Array(this._iRows); //0 - Empty; 1 - Road
+			this._aBoard = new Array(this._iRows); //-1 - Blocked; 0 - Empty; 1 - Road; 2 - River; 3 - Thicket
 			for(var i = 0; i < this._aBoard.length; i++){
 				this._aBoard[i] = new Array(this._iColumns);
 				for(var j = 0; j < this._aBoard[i].length; j++){
@@ -36,44 +36,80 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			
 			jQuery.sap.includeStyleSheet('./css/style.css');
 			
+			oMain.attachBrowserEvent("keydown", function(oEvent){
+				if(oEvent.keyCode === 48){ //0
+					oView.byId("clearBtn").firePress();
+				}else{
+					var iIndex = this.getModel("LHModel").getProperty("/DrawMode");
+					if(oEvent.keyCode === 49){ // 1
+		        		iIndex = 0;
+		        	}else if(oEvent.keyCode === 50){ // 2
+		        		iIndex = 1;
+		        	}else if(oEvent.keyCode === 51){ // 3
+		        		iIndex = 2;
+		        	}
+		        	oView.byId("groupRB").setSelectedIndex(iIndex);
+		        	self.handleRBSelect();
+				}
+        	});
+			
 			var fnPress = function(oEvent){
+				var iDrawMode = this.getModel("LHModel").getProperty("/DrawMode");
 				if(self._bDrawing){
-					if(this === self._oDrawTile){
+					if(self._aHoverPreview.length !== 0){
+						if(this === self._oDrawTile){
+							self._bDrawing = false;
+							self._oDrawTile.removeStyleClass("boardTileSelected");
+							self._oDrawTile = null;
+							if(self._oStartTile){
+								self._oStartTile.removeStyleClass("startTileSelected");
+								self._oStartTile = null;
+							}
+						}else{
+							var oLastTile = self._oDrawTile === self._aHoverPreview[0]?self._aHoverPreview[self._aHoverPreview.length-1]:
+								self._aHoverPreview[0];
+							self._oDrawTile.removeStyleClass("boardTileSelected");
+							self._aHoverPreview.forEach(function(oItem){
+								if(self._bErasing){
+									self._setEmpty(oItem);
+								}else{
+									self._setRoad(oItem);
+								}
+							});
+							if(self._getDrawMode() === 2 && this !== self._oStartTile){
+								self._oDrawTile = oLastTile;
+								self._oDrawTile.addStyleClass("boardTileSelected");
+							}else{
+								self._bDrawing = false;
+								self._oDrawTile = null;
+								if(self._oStartTile){
+									self._oStartTile.removeStyleClass("startTileSelected");
+									self._oStartTile = null;
+								}
+							}
+						}
+					}
+				}else{
+					self._bErasing = self._isRoad(this);
+					if(iDrawMode !== 0){
+						self._bDrawing = true;
+						self._oDrawTile = this;
+						if(iDrawMode === 2 && !self._bErasing){
+							self._oStartTile = this;
+							this.addStyleClass("startTileSelected");
+						}else{
+							self._oDrawTile.addStyleClass("boardTileSelected");
+						}
+						self._oHoverTile = null;
+						if(self._bErasing){
+							self._oDrawTile.setProperty("backgroundImage", "images/RoadHoverErase.png");
+						}
+					}else{
 						if(self._bErasing){
 							self._setEmpty(this);
 						}else{
 							self._setRoad(this);
-						}	
-						self._bDrawing = false;
-						self._oDrawTile.removeStyleClass("boardTileSelected");
-						self._oDrawTile = null;
-					}else{
-						var oLastTile = self._oDrawTile === self._aHoverPreview[0]?self._aHoverPreview[self._aHoverPreview.length-1]:
-							self._aHoverPreview[0];
-						self._oDrawTile.removeStyleClass("boardTileSelected");
-						self._aHoverPreview.forEach(function(oItem){
-							if(self._bErasing){
-								self._setEmpty(oItem);
-							}else{
-								self._setRoad(oItem);
-							}
-						});
-						if(self._getDrawMode() === 2){
-							self._oDrawTile = oLastTile;
-							self._oDrawTile.addStyleClass("boardTileSelected");
-						}else{
-							self._bDrawing = false;
-							self._oDrawTile = null;
 						}
-					}
-				}else{
-					self._bDrawing = true;
-					self._oDrawTile = this;
-					self._oDrawTile.addStyleClass("boardTileSelected");
-					self._oHoverTile = null;
-					self._bErasing = self._isRoad(this);
-					if(self._bErasing){
-						self._oDrawTile.setProperty("backgroundImage", "images/RoadHoverErase.png");
 					}
 				}
 				self._clearHoverPreview();
@@ -143,30 +179,33 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 					oRow.addItem(oTile);
 				}
 			}       
-			
-            this.sTurn = "Red";
-            this.sWinner = "";
-            this.sGrid = ["", "", "", "", "", "", "", "", ""];
-            var oViewModel = new JSONModel({sTurn: this.sTurn, sWinner: this.sWinner});
-            this.getView().setModel(oViewModel,"view");
         },
 		
-		press : function(evt) {
-			var oTile = evt.getSource();
-			if(oTile.getProperty("backgroundImage") === "" && this.sWinner === ""){
-				if(this.sTurn === "Red"){
-					oTile.setProperty("backgroundImage", "images/Red");
-					this.sTurn = "Blue";
-				}else{
-					oTile.setProperty("backgroundImage", "images/Blue");
-					this.sTurn = "Red";
+		handleRBSelect: function(){
+			if(this._bDrawing){
+				this._bDrawing = false;
+				this._oDrawTile.removeStyleClass("boardTileSelected");
+				this._oDrawTile = null;
+				if(this._oStartTile){
+					this._oStartTile.removeStyleClass("startTileSelected");
+					this._oStartTile = null;
 				}
-				this._checkVictory();
-				var oViewModel = new JSONModel({sTurn: this.sTurn, sWinner: this.sWinner});
-            	this.getView().setModel(oViewModel,"view");				//Maneira mais eficiente de atualizar a view??
+				this._clearHoverPreview();
+			}	
+		},
+		
+		handleClearBoard: function(){
+			this.handleRBSelect();
+			for(var i = 0; i < this._iRows; i++){
+				for(var j = 0; j < this._iColumns; j++){
+					this._aBoard[i][j] = 0;
+					this._aTilesBoard[i][j].setProperty("backgroundImage", "images/Empty.png");
+				}
 			}
-
-			//MessageToast.show("The GenericTile is pressed.");
+		},
+		
+		handleSolveBoard : function(){
+			sap.ui.controller("opensap.myapp.controller.Solver").solve(this._aBoard);	
 		},
 		
 		_getX: function(oTile){
@@ -228,47 +267,6 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 		
 		_getDrawMode: function(){
 			return this.getView().getModel("LHModel").getProperty("/DrawMode");
-		},
-		
-		_checkVictory: function(){
-			for(var i = 1; i < 10; i++){
-				var oTile = this.getView().byId("tile" + i);
-				var sTemp = oTile.getBackgroundImage().split("/");	
-				this.sGrid[i-1] = sTemp[sTemp.length-1];
-			}
-			//Horizontal checks
-			if(this.sGrid[0] !== "" && this.sGrid[0] === this.sGrid[1] && this.sGrid[0] === this.sGrid[2])
-				this.sWinner = this.sGrid[0];
-			else if(this.sGrid[3] !== "" && this.sGrid[3] === this.sGrid[4] && this.sGrid[3] === this.sGrid[5])
-				this.sWinner = this.sGrid[3];
-			else if(this.sGrid[6] !== "" && this.sGrid[6] === this.sGrid[7] && this.sGrid[6] === this.sGrid[8])
-				this.sWinner = this.sGrid[7];
-			//Vertical checks
-			else if(this.sGrid[0] !== "" && this.sGrid[0] === this.sGrid[3] && this.sGrid[0] === this.sGrid[6])
-				this.sWinner = this.sGrid[0];
-			else if(this.sGrid[1] !== "" && this.sGrid[1] === this.sGrid[4] && this.sGrid[1] === this.sGrid[7])
-				this.sWinner = this.sGrid[1];	
-			else if(this.sGrid[2] !== "" && this.sGrid[2] === this.sGrid[5] && this.sGrid[2] === this.sGrid[8])
-				this.sWinner = this.sGrid[2];
-			//Diagonal checks
-			else if(this.sGrid[0] !== "" && this.sGrid[0] === this.sGrid[4] && this.sGrid[0] === this.sGrid[8])
-				this.sWinner = this.sGrid[0];
-			else if(this.sGrid[2] !== "" && this.sGrid[2] === this.sGrid[4] && this.sGrid[2] === this.sGrid[6])
-				this.sWinner = this.sGrid[2];
-			if(this.sWinner !== ""){
-				MessageToast.show(this.sWinner + " wins!");
-				this.sTurn = this.sWinner;
-			}
-			
-		},
-		
-		onPress: function (evt) {
-			for(var i = 1; i < 10; i++){
-				var oTile = this.getView().byId("tile" + i);
-					oTile.setProperty("backgroundImage", "");
-				this.sGrid[i-1] = "";
-				this.sWinner = "";
-			}
 		}
 	});
 
