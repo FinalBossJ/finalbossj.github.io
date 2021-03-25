@@ -198,7 +198,7 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
         },
         
         _cloneBoard: function(aBoard){
-        	return aBoard.splice();
+        	return aBoard.splice(0);
         },
         
         _isPlaceable: function(n){
