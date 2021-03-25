@@ -10,7 +10,8 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
         	console.log("Starting Solver...");
         	this._iRows = aStartBoard.length;
         	this._iColumns = aStartBoard[0].length;
-        	var aBoard = this._cloneBoard(aStartBoard);
+        	var aTypedBoard = this._typeArray(aStartBoard);
+        	var aBoard = this._cloneBoard(aTypedBoard);
         	var oBoard = this._prepareBoard(aBoard); // {aBoard, iX, iY, iScore}
         	var oSolution = {"aBoard":[], "iScore":0}; // {aBoard, iScore}
         	var aListToSolve = this._getStartPositions(oBoard); // [{aBoard, iX, iY, iScore}]
@@ -33,25 +34,25 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 				//t1 = performance.now();
 				//Add left
 				var iLeft = oCurr.iX-1;
-				if(iLeft >= 0 && this._isPlaceable(oCurr.aBoard[iLeft][oCurr.iY])){
+				if(iLeft >= 0 && this._isPlaceable(oCurr.aBoard[this._getTypedIndex(iLeft,oCurr.iY)])){
 					aListToSolve.push(this.placeRiver(oCurr, iLeft, oCurr.iY));
 				}
 				
 				//Add right
 				var iRight = oCurr.iX+1;
-				if(iRight < this._iRows && this._isPlaceable(oCurr.aBoard[iRight][oCurr.iY])){
+				if(iRight < this._iRows && this._isPlaceable(oCurr.aBoard[this._getTypedIndex(iRight,oCurr.iY)])){
 					aListToSolve.push(this.placeRiver(oCurr, iRight, oCurr.iY));
 				}
 				
 				//Add up
 				var iUp = oCurr.iY-1;
-				if(iUp > 0 && this._isPlaceable(oCurr.aBoard[oCurr.iX][iUp])){
+				if(iUp > 0 && this._isPlaceable(oCurr.aBoard[this._getTypedIndex(oCurr.iX,iUp)])){
 					aListToSolve.push(this.placeRiver(oCurr, oCurr.iX, iUp));
 				}
 				
 				//Add down
 				var iDown = oCurr.iY+1;
-				if(iDown < this._iColumns && this._isPlaceable(oCurr.aBoard[oCurr.iX][iDown])){
+				if(iDown < this._iColumns && this._isPlaceable(oCurr.aBoard[this._getTypedIndex(oCurr.iX,iDown)])){
 					aListToSolve.push(this.placeRiver(oCurr, oCurr.iX, iDown));
 				}
 				//tPlace += performance.now()-t1;
@@ -70,42 +71,42 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
         */
         placeRiver: function(oBoard, iX, iY){
         	var aClone = this._cloneBoard(oBoard.aBoard);
-        	var iNewScore = oBoard.iScore - aClone[iX][iY];
-        	aClone[iX][iY] = 3;
-        	if(iX-1 >= 0 && this._isPlaceable(aClone[iX-1][iY])){
-        		if(aClone[iX-1][iY] === 2){
+        	var iNewScore = oBoard.iScore - aClone[this._getTypedIndex(iX,iY)];
+        	aClone[this._getTypedIndex(iX,iY)] = 3;
+        	if(iX-1 >= 0 && this._isPlaceable(aClone[this._getTypedIndex(iX-1,iY)])){
+        		if(aClone[this._getTypedIndex(iX-1,iY)] === 2){
         			iNewScore += 2;
-        			aClone[iX-1][iY] = 4;
+        			aClone[this._getTypedIndex(iX-1,iY)] = 4;
         		}else{
         			iNewScore += 4;
-        			aClone[iX-1][iY] += 4;
+        			aClone[this._getTypedIndex(iX-1,iY)] += 4;
         		}     		       		
         	}
-        	if(iY-1 >= 0 && this._isPlaceable(aClone[iX][iY-1])){
-        		if(aClone[iX][iY-1] === 2){
+        	if(iY-1 >= 0 && this._isPlaceable(aClone[this._getTypedIndex(iX,iY-1)])){
+        		if(aClone[this._getTypedIndex(iX,iY-1)] === 2){
         			iNewScore += 2;
-        			aClone[iX][iY-1] = 4;
+        			aClone[this._getTypedIndex(iX,iY-1)] = 4;
         		}else{
         			iNewScore += 4;
-        			aClone[iX][iY-1] += 4;
+        			aClone[this._getTypedIndex(iX,iY-1)] += 4;
         		}
         	}
-        	if(iX+1 < this._iRows && this._isPlaceable(aClone[iX+1][iY])){
-        		if(aClone[iX+1][iY] === 2){
+        	if(iX+1 < this._iRows && this._isPlaceable(aClone[this._getTypedIndex(iX+1,iY)])){
+        		if(aClone[this._getTypedIndex(iX+1,iY)] === 2){
         			iNewScore += 2;
-        			aClone[iX+1][iY] = 4;
+        			aClone[this._getTypedIndex(iX+1,iY)] = 4;
         		}else{
         			iNewScore += 4;
-        			aClone[iX+1][iY] += 4;
+        			aClone[this._getTypedIndex(iX+1,iY)] += 4;
         		}
         	}
-        	if(iY+1 < this._iColumns && this._isPlaceable(aClone[iX][iY+1])){
-        		if(aClone[iX][iY+1] === 2){
+        	if(iY+1 < this._iColumns && this._isPlaceable(aClone[this._getTypedIndex(iX,iY+1)])){
+        		if(aClone[this._getTypedIndex(iX,iY+1)] === 2){
         			iNewScore += 2;
-        			aClone[iX][iY+1] = 4;
+        			aClone[this._getTypedIndex(iX,iY+1)] = 4;
         		}else{
         			iNewScore += 4;
-        			aClone[iX][iY+1] += 4;
+        			aClone[this._getTypedIndex(iX,iY+1)] += 4;
         		}
         	}
         	return {"aBoard":aClone, "iX":iX, "iY":iY, "iScore":iNewScore};
@@ -128,19 +129,19 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
         _getStartPositions: function(oBoard){
         	var aStartPositions = [];
         	var aBoard = oBoard.aBoard;
-        	for(var i = 0; i < aBoard.length; i++){
-        		if(i === 0 || i === aBoard.length-1){
-        			for(var j = 0; j < aBoard[i].length; j++){
-        				if(aBoard[i][j] !== 1 && aBoard[i][j] !== -1){
+        	for(var i = 0; i < this._iRows; i++){
+        		if(i === 0 || i === this._iRows-1){
+        			for(var j = 0; j < this._iColumns; j++){
+        				if(aBoard[this._getTypedIndex(i,j)] !== 1 && aBoard[this._getTypedIndex(i,j)] !== -1){
 	        				aStartPositions.push(this.placeRiver(oBoard, i, j));
         				}
         			}
         		}else{
-        			if(aBoard[i][0] !== 1 && aBoard[i][0] !== -1){
+        			if(aBoard[this._getTypedIndex(i,0)] !== 1 && aBoard[this._getTypedIndex(i,0)] !== -1){
 	    				aStartPositions.push(this.placeRiver(oBoard, i, 0));
         			}
-        			if(aBoard[i][aBoard[i].length-1] !== 1 && aBoard[i][aBoard[i].length-1] !== -1){
-	    				aStartPositions.push(this.placeRiver(oBoard, i, aBoard[i].length-1));
+        			if(aBoard[this._getTypedIndex(i,this._iColumns-1)] !== 1 && aBoard[this._getTypedIndex(i,this._iColumns-1)] !== -1){
+	    				aStartPositions.push(this.placeRiver(oBoard, i, this._iColumns-1));
         			}
         		}
         	}
@@ -151,28 +152,28 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
         */
         _prepareBoard: function(aBoard){
         	var oBoard = {"aBoard":aBoard, "iX":0, "iY": 0, "iScore":0};
-        	for(var i = 0; i < aBoard.length; i++){
-        		for(var j = 0; j < aBoard[i].length; j++){
-        			if(aBoard[i][j] === 1){
-        				var iLeft = aBoard[i-1]?aBoard[i-1][j]:undefined;
-        				var iRight = aBoard[i+1]?aBoard[i+1][j]:undefined;
-        				var iUp = aBoard[i][j-1];
-        				var iDown = aBoard[i][j+1];
+        	for(var i = 0; i < this._iRows; i++){
+        		for(var j = 0; j < this._iColumns; j++){
+        			if(aBoard[this._getTypedIndex(i,j)] === 1){
+        				var iLeft = i-1>=0?aBoard[this._getTypedIndex(i-1, j)]:undefined;
+        				var iRight = i+1<this._iRows?aBoard[this._getTypedIndex(i+1,j)]:undefined;
+        				var iUp = j-1>=0?aBoard[this._getTypedIndex(i,j-1)]:undefined ;
+        				var iDown = j+1<this._iColumns?aBoard[this._getTypedIndex(i,j+1)]:undefined;
         				
 	        			if(iLeft !== undefined && iLeft !== 1){
-	        				aBoard[i-1][j] = -1;
+	        				aBoard[this._getTypedIndex(i-1,j)] = -1;
 	        			}
 	        			if(iRight !== undefined && iRight !== 1){
-	        				aBoard[i+1][j] = -1;
+	        				aBoard[this._getTypedIndex(i+1,j)] = -1;
 	        			}
 	        			if(iUp !== undefined && iUp !== 1){
-	        				aBoard[i][j-1] = -1;
+	        				aBoard[this._getTypedIndex(i,j-1)] = -1;
 	        			}
 	        			if(iDown !== undefined && iDown !== 1){
-	        				aBoard[i][j+1] = -1;
+	        				aBoard[this._getTypedIndex(i,j+1)] = -1;
 	        			}
-        			}else if(aBoard[i][j] === 0){
-        				aBoard[i][j] = 2;
+        			}else if(aBoard[this._getTypedIndex(i,j)] === 0){
+        				aBoard[this._getTypedIndex(i,j)] = 2;
         				oBoard.iScore += 2;
         			}
         		}
@@ -197,15 +198,26 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
         },
         
         _cloneBoard: function(aBoard){
-        	var aClone = [];
-        	for (var i = 0; i < aBoard.length; i++){
-			    aClone[i] = aBoard[i].slice();
-			}
-			return aClone;
+        	return aBoard.splice();
         },
         
         _isPlaceable: function(n){
         	return  [0, 2, 4, 8, 12].includes(n);
+        },
+        
+        _typeArray: function(aBoard){
+        	var aTypedArray = [];
+        	for(var i = 0; i < aBoard.length; i++){
+        		for(var j = 0; j < aBoard[i].length; j++){
+        			aTypedArray[this._getTypedIndex(i,j)] = aBoard[i][j];
+        		}
+        	}
+        	
+        	return aTypedArray;
+        },
+        
+        _getTypedIndex: function(x, y){
+        	return this._iColumns*x+y;
         }
 	});
 
