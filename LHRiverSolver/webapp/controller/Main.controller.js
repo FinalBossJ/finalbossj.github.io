@@ -22,7 +22,7 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			
 			this._iRows = 12;
 			this._iColumns = 21;
-			this._aBoard = new Array(this._iRows); //-1 - Blocked; 0 - Empty; 1 - Road; 2 - River; 3 - Thicket
+			this._aBoard = new Array(this._iRows); //-1 - Blocked; 0 - Empty; 1 - Road; 2^x - Thicket; 3 - River
 			for(var i = 0; i < this._aBoard.length; i++){
 				this._aBoard[i] = new Array(this._iColumns);
 				for(var j = 0; j < this._aBoard[i].length; j++){

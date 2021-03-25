@@ -5,55 +5,110 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 	var PageController = Controller.extend("opensap.myapp.controller.App", {
         
         solve: function(aStartBoard){
+        	//var t0=0, t1=0, t2=0;
+        	//var tTotal=0, tPlace=0, tPop=0;
         	console.log("Starting Solver...");
-        	var iRows = aStartBoard.length;
-        	var iColumns = aStartBoard[0].length;
+        	this._iRows = aStartBoard.length;
+        	this._iColumns = aStartBoard[0].length;
         	var aBoard = this._cloneBoard(aStartBoard);
-        	this._blockRoadNBs(aBoard);
+        	var oBoard = this._prepareBoard(aBoard); // {aBoard, iX, iY, iScore}
         	var oSolution = {"aBoard":[], "iScore":0}; // {aBoard, iScore}
-        	var aListToSolve = this._getStartPositions(aBoard); // [{aBoard, iX, iY}]
+        	var aListToSolve = this._getStartPositions(oBoard); // [{aBoard, iX, iY, iScore}]
         	
-			
-			
+			// t0 = performance.now();
 			console.log("Solving...");
 			while(aListToSolve.length > 0){
-				var oCurr = aListToSolve.shift();
-				var iCurrScore = this.score(oCurr.aBoard);
-				console.log(aListToSolve.length);
+				//t2 = performance.now();
+				var oCurr = aListToSolve.pop();
+				//tPop += performance.now()-t2;
+				var iCurrScore = oCurr.iScore;
 				
 				//Is the score better?
 				if(iCurrScore > oSolution.iScore){
 					oSolution.aBoard = oCurr.aBoard;
 					oSolution.iScore = iCurrScore;
-					console.log("New best score: " + iCurrScore);
+					//console.log("New best score: " + iCurrScore);
 				}
 				
+				//t1 = performance.now();
 				//Add left
 				var iLeft = oCurr.iX-1;
-				if(iLeft >= 0 && oCurr.aBoard[iLeft][oCurr.iY] === 0){
-					aListToSolve.push(this._getNBBoard(oCurr.aBoard, iLeft, oCurr.iY));
+				if(iLeft >= 0 && this._isPlaceable(oCurr.aBoard[iLeft][oCurr.iY])){
+					aListToSolve.push(this.placeRiver(oCurr, iLeft, oCurr.iY));
 				}
 				
 				//Add right
 				var iRight = oCurr.iX+1;
-				if(iRight < iRows && oCurr.aBoard[iRight][oCurr.iY] === 0){
-					aListToSolve.push(this._getNBBoard(oCurr.aBoard, iRight, oCurr.iY));
+				if(iRight < this._iRows && this._isPlaceable(oCurr.aBoard[iRight][oCurr.iY])){
+					aListToSolve.push(this.placeRiver(oCurr, iRight, oCurr.iY));
 				}
 				
 				//Add up
 				var iUp = oCurr.iY-1;
-				if(iUp > 0 && oCurr.aBoard[oCurr.iX][iUp] === 0){
-					aListToSolve.push(this._getNBBoard(oCurr.aBoard, oCurr.iX, iUp));
+				if(iUp > 0 && this._isPlaceable(oCurr.aBoard[oCurr.iX][iUp])){
+					aListToSolve.push(this.placeRiver(oCurr, oCurr.iX, iUp));
 				}
 				
 				//Add down
 				var iDown = oCurr.iY+1;
-				if(iDown < iColumns && oCurr.aBoard[oCurr.iX][iDown] === 0){
-					aListToSolve.push(this._getNBBoard(oCurr.aBoard, oCurr.iX, iDown));
+				if(iDown < this._iColumns && this._isPlaceable(oCurr.aBoard[oCurr.iX][iDown])){
+					aListToSolve.push(this.placeRiver(oCurr, oCurr.iX, iDown));
 				}
+				//tPlace += performance.now()-t1;
 			}
 			
 			console.log(oSolution);
+			// tTotal = performance.now()-t0;
+			// var pPlace = (100*tPlace/tTotal);
+			// var pPop = (100*tPop/tTotal);
+			// console.log("Time Total: "+ tTotal.toFixed(2) + "ms (100%)");
+			// console.log("Time Placing: "+ tPlace.toFixed(2) + "ms ("+pPlace.toFixed(2)+"%)");
+			// console.log("Time Popping: "+ tPop.toFixed(2) + "ms ("+pPop.toFixed(2)+"%)");
+        },
+        
+        /* oBoard = {aBoard, iX, iY, iScore}
+        */
+        placeRiver: function(oBoard, iX, iY){
+        	var aClone = this._cloneBoard(oBoard.aBoard);
+        	var iNewScore = oBoard.iScore - aClone[iX][iY];
+        	aClone[iX][iY] = 3;
+        	if(iX-1 >= 0 && this._isPlaceable(aClone[iX-1][iY])){
+        		if(aClone[iX-1][iY] === 2){
+        			iNewScore += 2;
+        			aClone[iX-1][iY] = 4;
+        		}else{
+        			iNewScore += 4;
+        			aClone[iX-1][iY] += 4;
+        		}     		       		
+        	}
+        	if(iY-1 >= 0 && this._isPlaceable(aClone[iX][iY-1])){
+        		if(aClone[iX][iY-1] === 2){
+        			iNewScore += 2;
+        			aClone[iX][iY-1] = 4;
+        		}else{
+        			iNewScore += 4;
+        			aClone[iX][iY-1] += 4;
+        		}
+        	}
+        	if(iX+1 < this._iRows && this._isPlaceable(aClone[iX+1][iY])){
+        		if(aClone[iX+1][iY] === 2){
+        			iNewScore += 2;
+        			aClone[iX+1][iY] = 4;
+        		}else{
+        			iNewScore += 4;
+        			aClone[iX+1][iY] += 4;
+        		}
+        	}
+        	if(iY+1 < this._iColumns && this._isPlaceable(aClone[iX][iY+1])){
+        		if(aClone[iX][iY+1] === 2){
+        			iNewScore += 2;
+        			aClone[iX][iY+1] = 4;
+        		}else{
+        			iNewScore += 4;
+        			aClone[iX][iY+1] += 4;
+        		}
+        	}
+        	return {"aBoard":aClone, "iX":iX, "iY":iY, "iScore":iNewScore};
         },
         
         /*Returns the score of a board
@@ -70,41 +125,32 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
     		return iScore;
         },
         
-        _getNBBoard: function(aBoard, x, y){
-        		var aClone = this._cloneBoard(aBoard);
-        		aClone[x][y] = 2;
-        		return {"aBoard":aClone, "iX":x, "iY":y};
-        },
-        
-        _getStartPositions: function(aBoard){
+        _getStartPositions: function(oBoard){
         	var aStartPositions = [];
-        	var aNewBoard;
+        	var aBoard = oBoard.aBoard;
         	for(var i = 0; i < aBoard.length; i++){
         		if(i === 0 || i === aBoard.length-1){
         			for(var j = 0; j < aBoard[i].length; j++){
         				if(aBoard[i][j] !== 1 && aBoard[i][j] !== -1){
-	        				aNewBoard = this._cloneBoard(aBoard);
-	        				aNewBoard[i][j] = 2;
-	        				aStartPositions.push({"aBoard":aNewBoard, "iX":i, "iY":j});
+	        				aStartPositions.push(this.placeRiver(oBoard, i, j));
         				}
         			}
         		}else{
         			if(aBoard[i][0] !== 1 && aBoard[i][0] !== -1){
-	        			aNewBoard = this._cloneBoard(aBoard);
-	        			aNewBoard[i][0] = 2;
-	    				aStartPositions.push({"aBoard":aNewBoard, "iX":i, "iY":0});
+	    				aStartPositions.push(this.placeRiver(oBoard, i, 0));
         			}
         			if(aBoard[i][aBoard[i].length-1] !== 1 && aBoard[i][aBoard[i].length-1] !== -1){
-	    				aNewBoard = this._cloneBoard(aBoard);
-	        			aNewBoard[i][aBoard[i].length-1] = 2;
-	    				aStartPositions.push({"aBoard":aNewBoard, "iX":i, "iY":aBoard[i].length-1});
+	    				aStartPositions.push(this.placeRiver(oBoard, i, aBoard[i].length-1));
         			}
         		}
         	}
         	return aStartPositions;
         },
         
-        _blockRoadNBs: function(aBoard){
+        /* Blocks road sideways and fills empty cells with thickets
+        */
+        _prepareBoard: function(aBoard){
+        	var oBoard = {"aBoard":aBoard, "iX":0, "iY": 0, "iScore":0};
         	for(var i = 0; i < aBoard.length; i++){
         		for(var j = 0; j < aBoard[i].length; j++){
         			if(aBoard[i][j] === 1){
@@ -125,9 +171,13 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 	        			if(iDown !== undefined && iDown !== 1){
 	        				aBoard[i][j+1] = -1;
 	        			}
+        			}else if(aBoard[i][j] === 0){
+        				aBoard[i][j] = 2;
+        				oBoard.iScore += 2;
         			}
         		}
         	}
+        	return oBoard;
         },
         
         /*Doesn't count diagonals nor itself
@@ -152,6 +202,10 @@ sap.ui.define(['sap/ui/core/mvc/Controller', 'sap/m/MessageToast', "sap/ui/model
 			    aClone[i] = aBoard[i].slice();
 			}
 			return aClone;
+        },
+        
+        _isPlaceable: function(n){
+        	return  [0, 2, 4, 8, 12].includes(n);
         }
 	});
 
